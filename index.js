@@ -1,5 +1,6 @@
 const sql = require('mssql');
 const pgp = require('pg-promise')();
+dotenv.config();
 
 // AWS Lambda entry point
 exports.handler = async (event, context) => {
@@ -17,24 +18,48 @@ exports.handler = async (event, context) => {
 
     // Configure PostgreSQL connection
     const pgsqlConfig = {
-      user: 'your-postgresql-username',
-      password: 'your-postgresql-password',
-      host: 'your-postgresql-host',
-      port: 'your-postgresql-port',
-      database: 'your-postgresql-database',
+        user: process.env.DB_USER,
+        host: process.env.DB_HOST,
+        database: process.env.DB_NAME,
+        password: process.env.DB_PASSWORD,
+        port: process.env.DB_PORT,
     };
 
     // Connect to MSSQL
     await sql.connect(mssqlConfig);
 
     // Get data from MSSQL
-    const mssqlQueryResult = await sql.query('SELECT * FROM your_mssql_table');
+    const mssqlQueryResult = await sql.query(`SELECT * FROM ${data.raw_table_name}`);
 
     // Connect to PostgreSQL
     const pgsql = pgp(pgsqlConfig);
 
     // Check if the table exists in PostgreSQL, create if not
-    await pgsql.none(`CREATE TABLE IF NOT EXISTS client_data_${new Date().getFullYear()} (...)`);
+    await pgsql.none(`CREATE TABLE IF NOT EXISTS client_data_${new Date().getFullYear()} (
+        active character varying(3) COLLATE pg_catalog."default",
+        agency_type character varying(64) COLLATE pg_catalog."default",
+        battalion character varying(64) COLLATE pg_catalog."default",
+        db_city character varying(64) COLLATE pg_catalog."default",
+        creation character varying(64) COLLATE pg_catalog."default",
+        crossstreets character varying(64) COLLATE pg_catalog."default",
+        entered_queue character varying(64) COLLATE pg_catalog."default",
+        db_id character varying(64) COLLATE pg_catalog."default",
+        jurisdiction character varying(64) COLLATE pg_catalog."default",
+        latitude character varying(64) COLLATE pg_catalog."default",
+        location character varying(64) COLLATE pg_catalog."default",
+        longitude character varying(64) COLLATE pg_catalog."default",
+        master_incident_id character varying(64) COLLATE pg_catalog."default",
+        premise character varying(64) COLLATE pg_catalog."default",
+        priority character varying(64) COLLATE pg_catalog."default",
+        sequencenumber character varying(64) COLLATE pg_catalog."default",
+        stacked character varying(64) COLLATE pg_catalog."default",
+        db_state character varying(64) COLLATE pg_catalog."default",
+        status character varying(64) COLLATE pg_catalog."default",
+        statusdatetime character varying(64) COLLATE pg_catalog."default",
+        type character varying(64) COLLATE pg_catalog."default",
+        type_description character varying(64) COLLATE pg_catalog."default",
+        zone character varying(64) COLLATE pg_catalog."default"
+    )`);
 
     // Set all rows' 'active' column to 'no'
     await pgsql.none(`UPDATE client_data_${new Date().getFullYear()} SET active = 'no'`);
