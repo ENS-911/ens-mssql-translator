@@ -1,5 +1,6 @@
 const sql = require('mssql');
 const pgp = require('pg-promise')();
+const dotenv = require('dotenv');
 dotenv.config();
 
 // AWS Lambda entry point
