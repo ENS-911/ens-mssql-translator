@@ -9,6 +9,8 @@ exports.handler = async (event, context) => {
     // Parse JSON object from the event
     const data = JSON.parse(event.body);
 
+    const dbName = `client-${data.key}`
+
     // Configure MSSQL connection
     const mssqlConfig = {
       user: data.raw_user,
@@ -21,7 +23,7 @@ exports.handler = async (event, context) => {
     const pgsqlConfig = {
         user: process.env.DB_USER,
         host: process.env.DB_HOST,
-        database: process.env.DB_NAME,
+        database: dbName,
         password: process.env.DB_PASSWORD,
         port: process.env.DB_PORT,
     };
