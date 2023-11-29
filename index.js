@@ -4,10 +4,12 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // AWS Lambda entry point
-exports.handler = async (event, context) => {
+module.exports.handler = async (event, context) => {
   try {
     // Parse JSON object from the event
     const data = JSON.parse(event.body);
+
+    console.log(data)
 
     const dbName = `client-${data.key}`
 
