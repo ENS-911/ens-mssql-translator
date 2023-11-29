@@ -15,6 +15,10 @@ module.exports.handler = async (event) => {
 
     console.log(data.key)
 
+    return {
+      body: JSON.stringify({ message: `Internal Server Error ***** The Data ${data}` }),
+    };
+
     const dbName = `client-${data.key}`
 
     // Configure MSSQL connection
@@ -96,7 +100,7 @@ module.exports.handler = async (event) => {
           `INSERT INTO client_data_${new Date().getFullYear()} (${columnNames.join(', ')}, active) VALUES (${'$1, '.repeat(
             columnNames.length
           )}$${columnNames.length + 1})`,
-          [...values, 'yes']
+          [...values, 'active']
         );
       }
     }
