@@ -3,6 +3,8 @@ const pgp = require('pg-promise')();
 const dotenv = require('dotenv');
 dotenv.config();
 
+console.log('*****Im in*****')
+
 // AWS Lambda entry point
 module.exports.handler = async (event, context) => {
   try {
