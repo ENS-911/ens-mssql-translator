@@ -7,7 +7,13 @@ console.log('*****Im in*****')
 
 // AWS Lambda entry point
 exports.handler = async (event) => {
-  const data = JSON.parse(event.body);
+  try {
+    const data = JSON.parse(event.body);
+    // Continue processing the parsed data
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    // Handle the error (e.g., send an appropriate response)
+  }
   try {
     // Parse JSON object from the event
 
