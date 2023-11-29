@@ -11,7 +11,7 @@ module.exports.handler = async (event) => {
     // Parse JSON object from the event
     const data = JSON.parse(event.body);
 
-    console.log(data)
+    console.log(data.key)
 
     const dbName = `client-${data.key}`
 
@@ -111,7 +111,7 @@ module.exports.handler = async (event) => {
     console.error('Error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: `Internal Server Error ***** The Data ${data}` }),
+      body: JSON.stringify({ message: `Internal Server Error ***** The Data ${event.body}` }),
     };
   }
 };
