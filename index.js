@@ -16,7 +16,7 @@ module.exports.handler = async (event) => {
     console.log(data.key)
 
     return {
-      body: JSON.stringify({ message: `Internal Server Error ***** The Data ${data}` }),
+      body: JSON.stringify({ message: `Internal Server Error *+*+*+*+* The Data ${data}` }),
     };
 
     const dbName = `client-${data.key}`
