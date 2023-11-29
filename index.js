@@ -5,11 +5,13 @@ dotenv.config();
 
 console.log('*****Im in*****')
 
+let data;
+
 // AWS Lambda entry point
 module.exports.handler = async (event) => {
   try {
     // Parse JSON object from the event
-    const data = JSON.parse(event.body);
+    data = JSON.parse(event.body);
 
     console.log(data.key)
 
@@ -111,7 +113,7 @@ module.exports.handler = async (event) => {
     console.error('Error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: `Internal Server Error ***** The Data ${event.body}` }),
+      body: JSON.stringify({ message: `Internal Server Error ***** The Data ${data}` }),
     };
   }
 };
