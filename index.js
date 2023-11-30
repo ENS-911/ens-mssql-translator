@@ -5,16 +5,23 @@ dotenv.config();
 
 // AWS Lambda entry point
 module.exports.handler = async (event) => {
-  const contentType = event.headers['Content-Type'] || '';
-if (contentType.toLowerCase() === 'application/json') {
-  // Proceed with JSON parsing
-  const body = event.body || '{}';
-  const data = JSON.parse(body);
-} else {
-  // Handle the case where the content type is not JSON
-  console.error('Invalid Content-Type. Expected application/json.');
-  // Return an appropriate response or take necessary action
-}
+  if (event.headers && event.headers['Content-Type']) {
+    const contentType = event.headers['Content-Type'].toLowerCase();
+  
+    if (contentType === 'application/json') {
+      // Proceed with JSON parsing
+      const body = event.body || '{}';
+      const data = JSON.parse(body);
+    } else {
+      // Handle the case where the content type is not JSON
+      console.error('Invalid Content-Type. Expected application/json.');
+      // Return an appropriate response or take necessary action
+    }
+  } else {
+    // Handle the case where headers or Content-Type is undefined
+    console.error('Headers or Content-Type undefined.');
+    // Return an appropriate response or take necessary action
+  }
   try {
     // Parse JSON object from the event
 
