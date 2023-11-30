@@ -3,6 +3,8 @@ const pgp = require('pg-promise')();
 const dotenv = require('dotenv');
 dotenv.config();
 
+let data;
+
 // AWS Lambda entry point
 module.exports.handler = async (event) => {
   if (event.headers && event.headers['Content-Type']) {
@@ -11,7 +13,7 @@ module.exports.handler = async (event) => {
     if (contentType === 'application/json') {
       // Proceed with JSON parsing
       const body = event.body || '{}';
-      const data = JSON.parse(body);
+      data = JSON.parse(body);
     } else {
       // Handle the case where the content type is not JSON
       console.error('Invalid Content-Type. Expected application/json.');
