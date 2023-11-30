@@ -3,25 +3,14 @@ const pgp = require('pg-promise')();
 const dotenv = require('dotenv');
 dotenv.config();
 
-console.log('*****Im in*****')
-
 // AWS Lambda entry point
 module.exports.handler = async (event) => {
-  try {
-    const data = JSON.parse(event.body);
-    // Continue processing the parsed data
-  } catch (error) {
-    console.error("Error parsing JSON:", error);
-    // Handle the error (e.g., send an appropriate response)
-  }
+  const body = event.body || '{}';
+  const data = JSON.parse(body);
   try {
     // Parse JSON object from the event
 
     console.log(data.key)
-
-    return {
-      body: JSON.stringify({ message: `Internal Server Error *+*+*+*+* The Data ${data}` }),
-    };
 
     const dbName = `client-${data.key}`
 
