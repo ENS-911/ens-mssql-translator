@@ -7,6 +7,7 @@ let data;
 
 // AWS Lambda entry point
 module.exports.handler = async (event) => {
+  console.log('event log', event)
   if (event.headers && event.headers['Content-Type']) {
     const contentType = event.headers['Content-Type'].toLowerCase();
   
