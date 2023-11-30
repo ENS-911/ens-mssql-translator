@@ -12,7 +12,7 @@ module.exports.handler = async (event) => {
   
     if (contentType === 'application/json') {
       // Proceed with JSON parsing
-      const body = event.body || '{}';
+      const body = event.Payload || '{}';
       data = JSON.parse(body);
     } else {
       // Handle the case where the content type is not JSON
