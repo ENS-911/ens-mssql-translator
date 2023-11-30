@@ -5,8 +5,16 @@ dotenv.config();
 
 // AWS Lambda entry point
 module.exports.handler = async (event) => {
+  const contentType = event.headers['Content-Type'] || '';
+if (contentType.toLowerCase() === 'application/json') {
+  // Proceed with JSON parsing
   const body = event.body || '{}';
   const data = JSON.parse(body);
+} else {
+  // Handle the case where the content type is not JSON
+  console.error('Invalid Content-Type. Expected application/json.');
+  // Return an appropriate response or take necessary action
+}
   try {
     // Parse JSON object from the event
 
