@@ -20,7 +20,6 @@ module.exports.handler = async (event, context) => {
       return { statusCode: 200, body: 'Success' };
     } else {
       console.error('Invalid or empty body.');
-      console.log('Parsed Body:', body);
       console.log('Parsed event:', event);
       console.log('Parsed event.Body:', event.body);
       return { statusCode: 400, body: 'Invalid or empty body.' };
