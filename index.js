@@ -7,24 +7,24 @@ let data;
 
 // AWS Lambda entry point
 module.exports.handler = async (event, context) => {
-  try {
-    console.log('Incoming Event:', event.body);
+    console.log('Incoming Event:', event);
 
     if (event && event.body) {
       const body = JSON.parse(event.body);
       console.log('Parsed Body:', body);
+      console.log('Parsed event:', event);
+      console.log('Parsed event.Body:', event.body);
 
       // Your processing logic here using the 'body' variable
 
       return { statusCode: 200, body: 'Success' };
     } else {
       console.error('Invalid or empty body.');
+      console.log('Parsed Body:', body);
+      console.log('Parsed event:', event);
+      console.log('Parsed event.Body:', event.body);
       return { statusCode: 400, body: 'Invalid or empty body.' };
     }
-  } catch (error) {
-    console.error('Error processing Lambda event:', error);
-    return { statusCode: 500, body: `Internal Server Error ***** The Data ${error.message}` };
-  }
 
   try {
     // Parse JSON object from the event
