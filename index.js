@@ -8,7 +8,7 @@ let data;
 // AWS Lambda entry point
 module.exports.handler = async (event, context) => {
   try {
-    console.log('Incoming Event:', event);
+    console.log('Incoming Event:', event.body);
 
     if (event && event.body) {
       const body = JSON.parse(event.body);
