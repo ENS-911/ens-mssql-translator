@@ -3,17 +3,17 @@ const pgp = require('pg-promise')();
 const dotenv = require('dotenv');
 dotenv.config();
 
-let data;
+
 
 // AWS Lambda entry point
 module.exports.handler = async (event, context) => {
     console.log('Incoming Event:', event);
 
-    if (event && event.body) {
-      const body = JSON.parse(event.body);
+    let data = event;
+
+    /*if (event && event.body) {
+      const body = JSON.parse(event);
       console.log('Parsed Body:', body);
-      console.log('Parsed event:', event);
-      console.log('Parsed event.Body:', event.body);
 
       // Your processing logic here using the 'body' variable
 
@@ -21,14 +21,11 @@ module.exports.handler = async (event, context) => {
     } else {
       console.error('Invalid or empty body.');
       console.log('Parsed event:', event);
-      console.log('Parsed event.Body:', event.body);
       return { statusCode: 400, body: 'Invalid or empty body.' };
-    }
+    }*/
 
   try {
     // Parse JSON object from the event
-
-    console.log(data.key)
 
     const dbName = `client-${data.key}`
 
