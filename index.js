@@ -54,6 +54,8 @@ module.exports.handler = async (event, context) => {
     // Get data from MSSQL
     const mssqlQueryResult = await sql.query(`SELECT * FROM ${data.raw_table_name}`);
 
+    console.log('mssql', mssqlQueryResult)
+
     // Connect to PostgreSQL
     const pgsql = pgp(pgsqlConfig);
 
