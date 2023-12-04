@@ -34,6 +34,8 @@ module.exports.handler = async (event, context) => {
             database: dbName,
             password: process.env.DB_PASSWORD,
             port: process.env.DB_PORT,
+            max: 20,
+            ssl: true,
         };
 
         // Connect to MSSQL
