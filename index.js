@@ -15,6 +15,7 @@ module.exports.handler = async (event, context) => {
     try {
         // Parse JSON object from the event
         const dbName = `client-${data.key}`;
+        const dbLoc = data.trans_db_loc;
 
         console.log('DB Name', dbName);
 
@@ -29,7 +30,7 @@ module.exports.handler = async (event, context) => {
         // Configure PostgreSQL connection
         const pgsqlConfig = {
             user: process.env.DB_USER,
-            host: process.env.DB_HOST,
+            host: dbLoc,
             database: dbName,
             password: process.env.DB_PASSWORD,
             port: process.env.DB_PORT,
