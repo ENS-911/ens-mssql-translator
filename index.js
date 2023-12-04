@@ -5,9 +5,12 @@ dotenv.config();
 
 // AWS Lambda entry point
 module.exports.handler = async (event, context) => {
-    console.log('Incoming Event:', event);
+    
 
-    let data = event;
+    let data = JSON.parse(event);
+
+    console.log('Incoming Event parsed to data:', data);
+
 
     try {
         // Parse JSON object from the event
