@@ -44,7 +44,7 @@ module.exports.handler = async (event, context) => {
         const pgPool = new Pool(pgsqlConfig);
 
     // Check if the table exists in PostgreSQL, create if not
-    await pgsql.none(`CREATE TABLE IF NOT EXISTS client_data_${new Date().getFullYear()} (
+    await pgPool.query(`CREATE TABLE IF NOT EXISTS client_data_${new Date().getFullYear()} (
         active character varying(3) COLLATE pg_catalog."default",
         agency_type character varying(64) COLLATE pg_catalog."default",
         battalion character varying(64) COLLATE pg_catalog."default",
