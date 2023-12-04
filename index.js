@@ -7,7 +7,7 @@ dotenv.config();
 module.exports.handler = async (event, context) => {
     
 
-    let data = JSON.parse(event);
+    let data = event;
 
     console.log('Incoming Event parsed to data:', data);
 
