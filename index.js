@@ -32,7 +32,7 @@ module.exports.handler = async (event, context) => {
             user: process.env.DB_USER,
             host: dbLoc,
             database: dbName,
-            password: process.env.DB_PASSWORD,
+            password: "ZCK,tCI8lv4o",
             port: process.env.DB_PORT,
             max: 20,
             ssl: true,
