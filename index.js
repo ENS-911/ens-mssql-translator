@@ -82,9 +82,10 @@ module.exports.handler = async (event, context) => {
     // Process each row from MSSQL
     for (const row of mssql.recordset) {
         // Check if the row exists in PostgreSQL
+        const oldId = data.db_id;
         const existingRow = await pgPool.query(
-            `SELECT * FROM client_data_${new Date().getFullYear()} WHERE mssql_column_key = $1`,
-            [row.mssql_column_key]
+            `SELECT * FROM client_data_${new Date().getFullYear()} WHERE db_id = $1`,
+            [row.oldId]
         );
 
         if (existingRow.rows.length > 0) {
