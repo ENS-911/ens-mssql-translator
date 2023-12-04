@@ -1,9 +1,7 @@
 const sql = require('mssql');
-const pgp = require('pg-promise')();
+const { Pool } = require('pg');
 const dotenv = require('dotenv');
 dotenv.config();
-
-
 
 // AWS Lambda entry point
 module.exports.handler = async (event, context) => {
@@ -11,53 +9,39 @@ module.exports.handler = async (event, context) => {
 
     let data = event;
 
-    /*if (event && event.body) {
-      const body = JSON.parse(event);
-      console.log('Parsed Body:', body);
+    try {
+        // Parse JSON object from the event
+        const dbName = `client-${data.key}`;
 
-      // Your processing logic here using the 'body' variable
+        console.log('DB Name', dbName);
 
-      return { statusCode: 200, body: 'Success' };
-    } else {
-      console.error('Invalid or empty body.');
-      console.log('Parsed event:', event);
-      return { statusCode: 400, body: 'Invalid or empty body.' };
-    }*/
+        // Configure MSSQL connection
+        const mssqlConfig = {
+            user: data.raw_user,
+            password: data.raw_pass,
+            server: data.raw_server,
+            database: data.raw_table,
+        };
 
-  try {
-    // Parse JSON object from the event
+        // Configure PostgreSQL connection
+        const pgsqlConfig = {
+            user: process.env.DB_USER,
+            host: process.env.DB_HOST,
+            database: dbName,
+            password: process.env.DB_PASSWORD,
+            port: process.env.DB_PORT,
+        };
 
-    const dbName = `client-${data.key}`
+        // Connect to MSSQL
+        await sql.connect(mssqlConfig);
 
-    console.log('DB Name', dbName);
+        // Get data from MSSQL
+        const mssqlQueryResult = await sql.query(`SELECT * FROM ${data.raw_table_name}`);
 
-    // Configure MSSQL connection
-    const mssqlConfig = {
-      user: data.raw_user,
-      password: data.raw_pass,
-      server: data.raw_server,
-      database: data.raw_table,
-    };
+        console.log('mssql', mssqlQueryResult);
 
-    // Configure PostgreSQL connection
-    const pgsqlConfig = {
-        user: process.env.DB_USER,
-        host: process.env.DB_HOST,
-        database: dbName,
-        password: process.env.DB_PASSWORD,
-        port: process.env.DB_PORT,
-    };
-
-    // Connect to MSSQL
-    await sql.connect(mssqlConfig);
-
-    // Get data from MSSQL
-    const mssqlQueryResult = await sql.query(`SELECT * FROM ${data.raw_table_name}`);
-
-    console.log('mssql', mssqlQueryResult)
-
-    // Connect to PostgreSQL
-    const pgsql = pgp(pgsqlConfig);
+        // Create a PostgreSQL pool
+        const pgPool = new Pool(pgsqlConfig);
 
     // Check if the table exists in PostgreSQL, create if not
     await pgsql.none(`CREATE TABLE IF NOT EXISTS client_data_${new Date().getFullYear()} (
@@ -87,49 +71,49 @@ module.exports.handler = async (event, context) => {
     )`);
 
     // Set all rows' 'active' column to 'no'
-    await pgsql.none(`UPDATE client_data_${new Date().getFullYear()} SET active = 'no'`);
+    await pgPool.query(`UPDATE client_data_${new Date().getFullYear()} SET active = 'no'`);
 
     // Process each row from MSSQL
     for (const row of mssqlQueryResult.recordset) {
-      // Check if the row exists in PostgreSQL
-      const existingRow = await pgsql.oneOrNone(
-        `SELECT * FROM client_data_${new Date().getFullYear()} WHERE mssql_column_key = $1`,
-        [row.mssql_column_key]
-      );
-
-      if (existingRow) {
-        // Row exists, update 'active' to 'yes'
-        await pgsql.none(
-          `UPDATE client_data_${new Date().getFullYear()} SET active = 'yes' WHERE mssql_column_key = $1`,
-          [row.mssql_column_key]
+        // Check if the row exists in PostgreSQL
+        const existingRow = await pgPool.query(
+            `SELECT * FROM client_data_${new Date().getFullYear()} WHERE mssql_column_key = $1`,
+            [row.mssql_column_key]
         );
-      } else {
-        // Row doesn't exist, insert new row
-        const columnNames = Object.keys(row).map((key) => data.translation[key] || key);
-        const values = Object.values(row);
 
-        await pgsql.none(
-          `INSERT INTO client_data_${new Date().getFullYear()} (${columnNames.join(', ')}, active) VALUES (${'$1, '.repeat(
-            columnNames.length
-          )}$${columnNames.length + 1})`,
-          [...values, 'active']
-        );
-      }
+        if (existingRow.rows.length > 0) {
+            // Row exists, update 'active' to 'yes'
+            await pgPool.query(
+                `UPDATE client_data_${new Date().getFullYear()} SET active = 'yes' WHERE mssql_column_key = $1`,
+                [row.mssql_column_key]
+            );
+        } else {
+            // Row doesn't exist, insert new row
+            const columnNames = Object.keys(row).map((key) => data.translation[key] || key);
+            const values = Object.values(row);
+
+            await pgPool.query(
+                `INSERT INTO client_data_${new Date().getFullYear()} (${columnNames.join(', ')}, active) VALUES ($${[
+                    ...Array(columnNames.length + 1).keys(),
+                ].join(', $')})`,
+                [...values, 'active']
+            );
+        }
     }
 
     // Close connections
     await sql.close();
-    pgp.end();
+    await pgPool.end();
 
     return {
-      statusCode: 200,
-      body: JSON.stringify({ message: 'Successfully processed data' }),
+        statusCode: 200,
+        body: JSON.stringify({ message: 'Successfully processed data' }),
     };
-  } catch (error) {
+} catch (error) {
     console.error('Error:', error);
     return {
-      statusCode: 500,
-      body: JSON.stringify({ message: `Internal Server Error ***** The Data ${data}` }),
+        statusCode: 500,
+        body: JSON.stringify({ message: `Internal Server Error ***** The Data ${data}` }),
     };
-  }
+}
 };
