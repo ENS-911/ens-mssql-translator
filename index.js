@@ -31,7 +31,7 @@ module.exports.handler = async (event, context) => {
         const pgsqlConfig = {
             user: process.env.DB_USER,
             host: dbLoc,
-            database: dbName,
+            database: 'postgres',
             password: "ZCK,tCI8lv4o",
             port: process.env.DB_PORT,
             max: 20,
