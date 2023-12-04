@@ -29,6 +29,8 @@ module.exports.handler = async (event, context) => {
 
     const dbName = `client-${data.key}`
 
+    console.log('DB Name', dbName);
+
     // Configure MSSQL connection
     const mssqlConfig = {
       user: data.raw_user,
