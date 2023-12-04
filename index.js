@@ -42,9 +42,9 @@ module.exports.handler = async (event, context) => {
         await sql.connect(mssqlConfig);
 
         // Get data from MSSQL
-        const mssqlQueryResult = await sql.query(`SELECT * FROM ${data.raw_table_name}`);
+        const mssql = await sql.query(`SELECT * FROM ${data.raw_table_name}`);
 
-        console.log('mssql', mssqlQueryResult);
+        console.log('mssql', mssql);
 
         // Create a PostgreSQL pool
         const pgPool = new Pool(pgsqlConfig);
@@ -80,7 +80,7 @@ module.exports.handler = async (event, context) => {
     await pgPool.query(`UPDATE client_data_${new Date().getFullYear()} SET active = 'no'`);
 
     // Process each row from MSSQL
-    for (const row of mssqlQueryResult.recordset) {
+    for (const row of mssql.recordset) {
         // Check if the row exists in PostgreSQL
         const existingRow = await pgPool.query(
             `SELECT * FROM client_data_${new Date().getFullYear()} WHERE mssql_column_key = $1`,
@@ -99,10 +99,7 @@ module.exports.handler = async (event, context) => {
             const values = Object.values(row);
 
             await pgPool.query(
-                `INSERT INTO client_data_${new Date().getFullYear()} (${columnNames.join(', ')}, active) VALUES ($${[
-                    ...Array(columnNames.length + 1).keys(),
-                ].join(', $')})`,
-                [...values, 'active']
+                `INSERT INTO client_data_${new Date().getFullYear()} (active, agency_type, battalion, db_city, creation, crossstreets, entered_queue, db_id, jurisdiction, latitude, location, longitude, master_incident_id, premise, priority, sequencenumber, stacked, db_state, status, statusdatetime, type, type_description, zone) VALUES (yes, ${mssql.agency_type}, ${mssql.battalion}, ${mssql.db_city}, ${mssql.creation}, ${mssql.crossstreets}, ${mssql.entered_queue}, ${mssql.db_id}, ${mssql.jurisdiction}, ${mssql.latitude}, ${mssql.location}, ${mssql.longitude}, ${mssql.master_incident_id}, ${mssql.premise}, ${mssql.priority}, ${mssql.sequencenumber}, ${mssql.stacked}, ${mssql.db_state}, ${mssql.status}, ${mssql.statusdatetime}, ${mssql.type}, ${mssql.type_description}, ${mssql.zone})`
             );
         }
     }
