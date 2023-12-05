@@ -96,11 +96,12 @@ module.exports.handler = async (event, context) => {
             );
         } else {
             // Row doesn't exist, insert new row
-            const columnNames = Object.keys(row).map((key) => data.translation[key] || key);
-            const values = Object.values(row);
+            //const columnNames = Object.keys(row).map((key) => data.translation[key] || key);
+            //const values = Object.values(row);
 
             await pgPool.query(
-                `INSERT INTO client_data_${new Date().getFullYear()} (active, agency_type, battalion, db_city, creation, crossstreets, entered_queue, db_id, jurisdiction, latitude, location, longitude, master_incident_id, premise, priority, sequencenumber, stacked, db_state, status, statusdatetime, type, type_description, zone) VALUES (yes, ${mssql.agency_type}, ${mssql.battalion}, ${mssql.db_city}, ${mssql.creation}, ${mssql.crossstreets}, ${mssql.entered_queue}, ${mssql.db_id}, ${mssql.jurisdiction}, ${mssql.latitude}, ${mssql.location}, ${mssql.longitude}, ${mssql.master_incident_id}, ${mssql.premise}, ${mssql.priority}, ${mssql.sequencenumber}, ${mssql.stacked}, ${mssql.db_state}, ${mssql.status}, ${mssql.statusdatetime}, ${mssql.type}, ${mssql.type_description}, ${mssql.zone})`
+                `INSERT INTO client_data_${new Date().getFullYear()} (active, agency_type, battalion, db_city, creation, crossstreets, entered_queue, db_id, jurisdiction, latitude, location, longitude, master_incident_id, premise, priority, sequencenumber, stacked, db_state, status, statusdatetime, type, type_description, zone) 
+                VALUES ("yes", '${mssql.agency_type}', '${mssql.battalion}', '${mssql.db_city}', '${mssql.creation}', '${mssql.crossstreets}', '${mssql.entered_queue}', '${mssql.db_id}', '${mssql.jurisdiction}', '${mssql.latitude}', '${mssql.location}', '${mssql.longitude}', '${mssql.master_incident_id}', '${mssql.premise}', '${mssql.priority}', '${mssql.sequencenumber}', '${mssql.stacked}', '${mssql.db_state}', '${mssql.status}', '${mssql.statusdatetime}', '${mssql.type}', '${mssql.type_description}', '${mssql.zone}')`
             );
         }
     }
