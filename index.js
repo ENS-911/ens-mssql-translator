@@ -135,12 +135,14 @@ for (const row of mssql.recordset) {
         `;
 
         const insertValues = [
-            'yes', row.agency_type, row.battalion, row.db_city, row.creation, row.crossstreets,
-            row.entered_queue, row.db_id, row.jurisdiction, row.latitude, row.location,
-            row.longitude, row.master_incident_id, row.premise, row.priority, row.sequencenumber,
-            row.stacked, row.db_state, row.status, row.statusdatetime, row.type, row.type_description,
-            row.zone
-        ];
+          'yes', row[data.agency_type], row[data.battalion], row[data.db_city],
+          row[data.creation], row[data.crossstreets], row[data.entered_queue],
+          row[data.db_id], row[data.jurisdiction], row[data.latitude], row[data.location],
+          row[data.longitude], row[data.master_incident_id], row[data.premise],
+          row[data.priority], row[data.sequencenumber], row[data.stacked],
+          row[data.db_state], row[data.status], row[data.statusdatetime],
+          row[data.type], row[data.type_description], row[data.zone]
+      ];
 
         await pgPool.query(insertQuery, insertValues);
     }
