@@ -77,24 +77,76 @@ module.exports.handler = async (event, context) => {
     )`);
 
     // Set all rows' 'active' column to 'no'
-    await pgPool.query(`UPDATE client_data_${new Date().getFullYear()} SET active = 'no'`);
+    //await pgPool.query(`UPDATE client_data_${new Date().getFullYear()} SET active = 'no'`);
 
     const year = new Date().getFullYear();
 
-for (const row of mssql.recordset) {
+    await pgPool.query(`UPDATE client_data_${year} SET active = 'no'`);
 
-    // Check if the row exists in PostgreSQL
-    const existingRow = await pgPool.query(
-        `SELECT * FROM client_data_${year} WHERE db_id = $1`,
-        [row[data.db_id]]
-    );
-
-    if (existingRow.rows.length > 0) {
-        // Row exists, update 'active' to 'yes'
-        await pgPool.query(
-            `UPDATE client_data_${year} SET active = 'yes' WHERE db_id = $1`,
-            [row[data.db_id]]
-        );
+    for (const row of mssql.recordset) {
+      const oldId = data.db_id;
+  
+      // Check if the row exists in PostgreSQL
+      const existingRow = await pgPool.query(
+          `SELECT * FROM client_data_${year} WHERE db_id = $1`,
+          [row[oldId]]
+      );
+  
+      if (existingRow.rows.length > 0) {
+          const existingData = existingRow.rows[0];
+  
+          // Check for changes in data
+          const dataChanged = Object.keys(row).some(key => row[key] !== existingData[key]);
+  
+          if (dataChanged) {
+              // Data has changed, update all columns and set 'active' to 'yes'
+              const updateQuery = `
+                  UPDATE client_data_${year} 
+                  SET 
+                      active = 'yes',
+                      agency_type = $2,
+                      battalion = $3,
+                      db_city = $4,
+                      creation = $5,
+                      crossstreets = $6,
+                      entered_queue = $7,
+                      db_id = $8,
+                      jurisdiction = $9,
+                      latitude = $10,
+                      location = $11,
+                      longitude = $12,
+                      master_incident_id = $13,
+                      premise = $14,
+                      priority = $15,
+                      sequencenumber = $16,
+                      stacked = $17,
+                      db_state = $18,
+                      status = $19,
+                      statusdatetime = $20,
+                      type = $21,
+                      type_description = $22,
+                      zone = $23
+                  WHERE db_id = $1
+              `;
+  
+              const updateValues = [
+                row[oldId], row[data.agency_type], row[data.battalion], row[data.db_city],
+                row[data.creation], row[data.crossstreets], row[data.entered_queue],
+                row[data.db_id], row[data.jurisdiction], row[data.latitude], row[data.location],
+                row[data.longitude], row[data.master_incident_id], row[data.premise],
+                row[data.priority], row[data.sequencenumber], row[data.stacked],
+                row[data.db_state], row[data.status], row[data.statusdatetime],
+                row[data.type], row[data.type_description], row[data.zone]
+              ];
+  
+              await pgPool.query(updateQuery, updateValues);
+          } else {
+              // Data hasn't changed, just set 'active' to 'yes'
+              await pgPool.query(
+                  `UPDATE client_data_${year} SET active = 'yes' WHERE db_id = $1`,
+                  [row[oldId]]
+              );
+          }
     } else {
         // Row doesn't exist, insert new row
         const insertQuery = `
