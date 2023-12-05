@@ -80,12 +80,12 @@ module.exports.handler = async (event, context) => {
     await pgPool.query(`UPDATE client_data_${new Date().getFullYear()} SET active = 'no'`);
 
     // Process each row from MSSQL
-    for (const row of mssql.recordset) {
+    /*for (const row of mssql.recordset) {
         // Check if the row exists in PostgreSQL
         const oldId = data.db_id;
         const existingRow = await pgPool.query(
             `SELECT * FROM client_data_${new Date().getFullYear()} WHERE db_id = $1`,
-            [row.oldId]
+            [row.`${oldId}`]
         );
 
         if (existingRow.rows.length > 0) {
@@ -101,10 +101,51 @@ module.exports.handler = async (event, context) => {
 
             await pgPool.query(
                 `INSERT INTO client_data_${new Date().getFullYear()} (active, agency_type, battalion, db_city, creation, crossstreets, entered_queue, db_id, jurisdiction, latitude, location, longitude, master_incident_id, premise, priority, sequencenumber, stacked, db_state, status, statusdatetime, type, type_description, zone) 
-                VALUES ("yes", '${mssql.agency_type}', '${mssql.battalion}', '${mssql.db_city}', '${mssql.creation}', '${mssql.crossstreets}', '${mssql.entered_queue}', '${mssql.db_id}', '${mssql.jurisdiction}', '${mssql.latitude}', '${mssql.location}', '${mssql.longitude}', '${mssql.master_incident_id}', '${mssql.premise}', '${mssql.priority}', '${mssql.sequencenumber}', '${mssql.stacked}', '${mssql.db_state}', '${mssql.status}', '${mssql.statusdatetime}', '${mssql.type}', '${mssql.type_description}', '${mssql.zone}')`
+                VALUES ('yes', '${mssql.agency_type}', '${mssql.battalion}', '${mssql.db_city}', '${mssql.creation}', '${mssql.crossstreets}', '${mssql.entered_queue}', '${mssql.db_id}', '${mssql.jurisdiction}', '${mssql.latitude}', '${mssql.location}', '${mssql.longitude}', '${mssql.master_incident_id}', '${mssql.premise}', '${mssql.priority}', '${mssql.sequencenumber}', '${mssql.stacked}', '${mssql.db_state}', '${mssql.status}', '${mssql.statusdatetime}', '${mssql.type}', '${mssql.type_description}', '${mssql.zone}')`
             );
         }
+    }*/
+
+    const year = new Date().getFullYear();
+
+for (const row of mssql.recordset) {
+    const oldId = data.db_id;
+
+    // Check if the row exists in PostgreSQL
+    const existingRow = await pgPool.query(
+        `SELECT * FROM client_data_${year} WHERE db_id = $1`,
+        [row[oldId]]
+    );
+
+    if (existingRow.rows.length > 0) {
+        // Row exists, update 'active' to 'yes'
+        await pgPool.query(
+            `UPDATE client_data_${year} SET active = 'yes' WHERE mssql_column_key = $1`,
+            [row.mssql_column_key]
+        );
+    } else {
+        // Row doesn't exist, insert new row
+        const insertQuery = `
+            INSERT INTO client_data_${year} (
+                active, agency_type, battalion, db_city, creation, crossstreets, entered_queue,
+                db_id, jurisdiction, latitude, location, longitude, master_incident_id, premise,
+                priority, sequencenumber, stacked, db_state, status, statusdatetime, type,
+                type_description, zone
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+        `;
+
+        const insertValues = [
+            'yes', row.agency_type, row.battalion, row.db_city, row.creation, row.crossstreets,
+            row.entered_queue, row.db_id, row.jurisdiction, row.latitude, row.location,
+            row.longitude, row.master_incident_id, row.premise, row.priority, row.sequencenumber,
+            row.stacked, row.db_state, row.status, row.statusdatetime, row.type, row.type_description,
+            row.zone
+        ];
+
+        await pgPool.query(insertQuery, insertValues);
     }
+}
+
 
     // Close connections
     await sql.close();
