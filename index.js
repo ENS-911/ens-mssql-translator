@@ -79,49 +79,21 @@ module.exports.handler = async (event, context) => {
     // Set all rows' 'active' column to 'no'
     await pgPool.query(`UPDATE client_data_${new Date().getFullYear()} SET active = 'no'`);
 
-    // Process each row from MSSQL
-    /*for (const row of mssql.recordset) {
-        // Check if the row exists in PostgreSQL
-        const oldId = data.db_id;
-        const existingRow = await pgPool.query(
-            `SELECT * FROM client_data_${new Date().getFullYear()} WHERE db_id = $1`,
-            [row.`${oldId}`]
-        );
-
-        if (existingRow.rows.length > 0) {
-            // Row exists, update 'active' to 'yes'
-            await pgPool.query(
-                `UPDATE client_data_${new Date().getFullYear()} SET active = 'yes' WHERE mssql_column_key = $1`,
-                [row.mssql_column_key]
-            );
-        } else {
-            // Row doesn't exist, insert new row
-            //const columnNames = Object.keys(row).map((key) => data.translation[key] || key);
-            //const values = Object.values(row);
-
-            await pgPool.query(
-                `INSERT INTO client_data_${new Date().getFullYear()} (active, agency_type, battalion, db_city, creation, crossstreets, entered_queue, db_id, jurisdiction, latitude, location, longitude, master_incident_id, premise, priority, sequencenumber, stacked, db_state, status, statusdatetime, type, type_description, zone) 
-                VALUES ('yes', '${mssql.agency_type}', '${mssql.battalion}', '${mssql.db_city}', '${mssql.creation}', '${mssql.crossstreets}', '${mssql.entered_queue}', '${mssql.db_id}', '${mssql.jurisdiction}', '${mssql.latitude}', '${mssql.location}', '${mssql.longitude}', '${mssql.master_incident_id}', '${mssql.premise}', '${mssql.priority}', '${mssql.sequencenumber}', '${mssql.stacked}', '${mssql.db_state}', '${mssql.status}', '${mssql.statusdatetime}', '${mssql.type}', '${mssql.type_description}', '${mssql.zone}')`
-            );
-        }
-    }*/
-
     const year = new Date().getFullYear();
 
 for (const row of mssql.recordset) {
-    const oldId = data.db_id;
 
     // Check if the row exists in PostgreSQL
     const existingRow = await pgPool.query(
         `SELECT * FROM client_data_${year} WHERE db_id = $1`,
-        [row[oldId]]
+        [row[data.db_id]]
     );
 
     if (existingRow.rows.length > 0) {
         // Row exists, update 'active' to 'yes'
         await pgPool.query(
-            `UPDATE client_data_${year} SET active = 'yes' WHERE mssql_column_key = $1`,
-            [row.mssql_column_key]
+            `UPDATE client_data_${year} SET active = 'yes' WHERE db_id = $1`,
+            [row[data.db_id]]
         );
     } else {
         // Row doesn't exist, insert new row
