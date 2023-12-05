@@ -84,12 +84,12 @@ module.exports.handler = async (event, context) => {
     await pgPool.query(`UPDATE client_data_${year} SET active = 'no'`);
 
     for (const row of mssql.recordset) {
-      const oldId = data.db_id;
+      
   
       // Check if the row exists in PostgreSQL
       const existingRow = await pgPool.query(
           `SELECT * FROM client_data_${year} WHERE db_id = $1`,
-          [row[oldId]]
+          [row[data.db_id]]
       );
   
       if (existingRow.rows.length > 0) {
@@ -128,9 +128,11 @@ module.exports.handler = async (event, context) => {
                       zone = $23
                   WHERE db_id = $1
               `;
+
+              console.log(``)
   
               const updateValues = [
-                row[oldId], row[data.agency_type], row[data.battalion], row[data.db_city],
+                row[data.db_id], row[data.agency_type], row[data.battalion], row[data.db_city],
                 row[data.creation], row[data.crossstreets], row[data.entered_queue],
                 row[data.db_id], row[data.jurisdiction], row[data.latitude], row[data.location],
                 row[data.longitude], row[data.master_incident_id], row[data.premise],
@@ -144,7 +146,7 @@ module.exports.handler = async (event, context) => {
               // Data hasn't changed, just set 'active' to 'yes'
               await pgPool.query(
                   `UPDATE client_data_${year} SET active = 'yes' WHERE db_id = $1`,
-                  [row[oldId]]
+                  [row[data.db_id]]
               );
           }
     } else {
