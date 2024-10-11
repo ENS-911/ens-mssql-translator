@@ -4,20 +4,25 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // AWS Lambda entry point
-module.exports.handler = async (event, context) => {
-    
-
-    let data = event;
+module.exports.handler = async (event) => {
+    console.log('Received event:', JSON.stringify(event, null, 2));
+    // Extract data from the event object
+    let data;
+  try {
+    data = typeof event === 'string' ? JSON.parse(event) : event;  // Parse the incoming event payload
+  } catch (error) {
+    console.error('Error parsing event payload:', error);
+    return { statusCode: 400, body: 'Invalid event payload' };
+  }
 
     console.log('Incoming Event parsed to data:', data);
 
-
     try {
-        // Parse JSON object from the event
+        // Setup dynamic PostgreSQL database location
         const dbName = `client-${data.key}`;
         const dbLoc = data.trans_db_loc;
 
-        console.log('DB Name', dbName);
+        console.log('DB Name:', dbName);
 
         // Configure MSSQL connection
         const mssqlConfig = {
@@ -32,162 +37,158 @@ module.exports.handler = async (event, context) => {
             user: process.env.DB_USER,
             host: dbLoc,
             database: 'postgres',
-            password: "ZCK,tCI8lv4o",
+            password: "ZCK,tCI8lv4o", // Consider using environment variables for sensitive data
             port: process.env.DB_PORT,
             max: 20,
-            ssl: true,
+            ssl: true,  // Set to true to ensure encrypted connection
         };
 
         // Connect to MSSQL
         await sql.connect(mssqlConfig);
 
-        // Get data from MSSQL
-        const mssql = await sql.query(`SELECT * FROM ${data.raw_table_name}`);
+        // Fetch data from MSSQL
+        const mssqlResult = await sql.query(`SELECT * FROM ${data.raw_table_name}`);
+        console.log('MSSQL Result:', mssqlResult);
 
-        console.log('mssql', mssql);
-
-        // Create a PostgreSQL pool
+        // Create a PostgreSQL connection pool
         const pgPool = new Pool(pgsqlConfig);
 
-    // Check if the table exists in PostgreSQL, create if not
-    await pgPool.query(`CREATE TABLE IF NOT EXISTS client_data_${new Date().getFullYear()} (
-        active VARCHAR(3),
-        agency_type VARCHAR(64),
-        battalion VARCHAR(64),
-        db_city VARCHAR(64),
-        creation VARCHAR(64),
-        crossstreets VARCHAR(64),
-        entered_queue VARCHAR(64),
-        db_id VARCHAR(64),
-        jurisdiction VARCHAR(64),
-        latitude VARCHAR(64),
-        location VARCHAR(64),
-        longitude VARCHAR(64),
-        master_incident_id VARCHAR(64),
-        premise VARCHAR(64),
-        priority VARCHAR(64),
-        sequencenumber VARCHAR(64),
-        stacked VARCHAR(64),
-        db_state VARCHAR(64),
-        status VARCHAR(64),
-        statusdatetime VARCHAR(64),
-        type VARCHAR(64),
-        type_description VARCHAR(64),
-        zone VARCHAR(64)
-    )`);
+        const currentYear = new Date().getFullYear();
 
-    // Set all rows' 'active' column to 'no'
-    //await pgPool.query(`UPDATE client_data_${new Date().getFullYear()} SET active = 'no'`);
+        // Ensure the target table exists in PostgreSQL
+        await pgPool.query(`CREATE TABLE IF NOT EXISTS client_data_${currentYear} (
+            active VARCHAR(3),
+            agency_type VARCHAR(64),
+            battalion VARCHAR(64),
+            db_city VARCHAR(64),
+            creation VARCHAR(64),
+            crossstreets VARCHAR(64),
+            entered_queue VARCHAR(64),
+            db_id VARCHAR(64),
+            jurisdiction VARCHAR(64),
+            latitude VARCHAR(64),
+            location VARCHAR(64),
+            longitude VARCHAR(64),
+            master_incident_id VARCHAR(64),
+            premise VARCHAR(64),
+            priority VARCHAR(64),
+            sequencenumber VARCHAR(64),
+            stacked VARCHAR(64),
+            db_state VARCHAR(64),
+            status VARCHAR(64),
+            statusdatetime VARCHAR(64),
+            type VARCHAR(64),
+            type_description VARCHAR(64),
+            zone VARCHAR(64)
+        )`);
 
-    const year = new Date().getFullYear();
+        // Set all rows' 'active' column to 'no'
+        await pgPool.query(`UPDATE client_data_${currentYear} SET active = 'no'`);
 
-    await pgPool.query(`UPDATE client_data_${year} SET active = 'no'`);
+        // Loop through MSSQL records and process them
+        for (const row of mssqlResult.recordset) {
+            const oldId = data.db_id;
 
-    for (const row of mssql.recordset) {
-      
-  
-      // Check if the row exists in PostgreSQL
-      const existingRow = await pgPool.query(
-          `SELECT * FROM client_data_${year} WHERE db_id = $1`,
-          [row[data.db_id]]
-      );
-  
-      if (existingRow.rows.length > 0) {
-          const existingData = existingRow.rows[0];
-  
-          // Check for changes in data
-          const dataChanged = Object.keys(row).some(key => row[key] !== existingData[key]);
-  
-          if (dataChanged) {
-              // Data has changed, update all columns and set 'active' to 'yes'
-              const updateQuery = `
-                  UPDATE client_data_${year} 
-                  SET 
-                      active = 'yes',
-                      agency_type = $2,
-                      battalion = $3,
-                      db_city = $4,
-                      creation = $5,
-                      crossstreets = $6,
-                      entered_queue = $7,
-                      db_id = $8,
-                      jurisdiction = $9,
-                      latitude = $10,
-                      location = $11,
-                      longitude = $12,
-                      master_incident_id = $13,
-                      premise = $14,
-                      priority = $15,
-                      sequencenumber = $16,
-                      stacked = $17,
-                      db_state = $18,
-                      status = $19,
-                      statusdatetime = $20,
-                      type = $21,
-                      type_description = $22,
-                      zone = $23
-                  WHERE db_id = $1
-              `;
+            // Check if the row exists in PostgreSQL
+            const existingRow = await pgPool.query(
+                `SELECT * FROM client_data_${currentYear} WHERE db_id = $1`,
+                [row[oldId]]
+            );
 
-              console.log(``)
-  
-              const updateValues = [
-                row[data.db_id], row[data.agency_type], row[data.battalion], row[data.db_city],
-                row[data.creation], row[data.crossstreets], row[data.entered_queue],
-                row[data.db_id], row[data.jurisdiction], row[data.latitude], row[data.location],
-                row[data.longitude], row[data.master_incident_id], row[data.premise],
-                row[data.priority], row[data.sequencenumber], row[data.stacked],
-                row[data.db_state], row[data.status], row[data.statusdatetime],
-                row[data.type], row[data.type_description], row[data.zone]
-              ];
-  
-              await pgPool.query(updateQuery, updateValues);
-          } else {
-              // Data hasn't changed, just set 'active' to 'yes'
-              await pgPool.query(
-                  `UPDATE client_data_${year} SET active = 'yes' WHERE db_id = $1`,
-                  [row[data.db_id]]
-              );
-          }
-    } else {
-        // Row doesn't exist, insert new row
-        const insertQuery = `
-            INSERT INTO client_data_${year} (
-                active, agency_type, battalion, db_city, creation, crossstreets, entered_queue,
-                db_id, jurisdiction, latitude, location, longitude, master_incident_id, premise,
-                priority, sequencenumber, stacked, db_state, status, statusdatetime, type,
-                type_description, zone
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
-        `;
+            if (existingRow.rows.length > 0) {
+                const existingData = existingRow.rows[0];
 
-        const insertValues = [
-          'yes', row[data.agency_type], row[data.battalion], row[data.db_city],
-          row[data.creation], row[data.crossstreets], row[data.entered_queue],
-          row[data.db_id], row[data.jurisdiction], row[data.latitude], row[data.location],
-          row[data.longitude], row[data.master_incident_id], row[data.premise],
-          row[data.priority], row[data.sequencenumber], row[data.stacked],
-          row[data.db_state], row[data.status], row[data.statusdatetime],
-          row[data.type], row[data.type_description], row[data.zone]
-      ];
+                // Detect changes between MSSQL and PostgreSQL data
+                const dataChanged = Object.keys(row).some(key => row[key] !== existingData[key]);
 
-        await pgPool.query(insertQuery, insertValues);
+                if (dataChanged) {
+                    // Update the PostgreSQL row if data has changed, and set 'active' to 'yes'
+                    const updateQuery = `
+                        UPDATE client_data_${currentYear}
+                        SET 
+                            active = 'yes',
+                            agency_type = $2,
+                            battalion = $3,
+                            db_city = $4,
+                            creation = $5,
+                            crossstreets = $6,
+                            entered_queue = $7,
+                            db_id = $8,
+                            jurisdiction = $9,
+                            latitude = $10,
+                            location = $11,
+                            longitude = $12,
+                            master_incident_id = $13,
+                            premise = $14,
+                            priority = $15,
+                            sequencenumber = $16,
+                            stacked = $17,
+                            db_state = $18,
+                            status = $19,
+                            statusdatetime = $20,
+                            type = $21,
+                            type_description = $22,
+                            zone = $23
+                        WHERE db_id = $1
+                    `;
+
+                    const updateValues = [
+                        row[oldId], row[data.agency_type], row[data.battalion], row[data.db_city],
+                        row[data.creation], row[data.crossstreets], row[data.entered_queue],
+                        row[data.db_id], row[data.jurisdiction], row[data.latitude], row[data.location],
+                        row[data.longitude], row[data.master_incident_id], row[data.premise],
+                        row[data.priority], row[data.sequencenumber], row[data.stacked],
+                        row[data.db_state], row[data.status], row[data.statusdatetime],
+                        row[data.type], row[data.type_description], row[data.zone]
+                    ];
+
+                    await pgPool.query(updateQuery, updateValues);
+                } else {
+                    // Set 'active' to 'yes' without updating data if no changes detected
+                    await pgPool.query(
+                        `UPDATE client_data_${currentYear} SET active = 'yes' WHERE db_id = $1`,
+                        [row[oldId]]
+                    );
+                }
+            } else {
+                // Insert a new row into PostgreSQL if it doesn't exist
+                const insertQuery = `
+                    INSERT INTO client_data_${currentYear} (
+                        active, agency_type, battalion, db_city, creation, crossstreets, entered_queue,
+                        db_id, jurisdiction, latitude, location, longitude, master_incident_id, premise,
+                        priority, sequencenumber, stacked, db_state, status, statusdatetime, type,
+                        type_description, zone
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+                `;
+
+                const insertValues = [
+                    'yes', row[data.agency_type], row[data.battalion], row[data.db_city],
+                    row[data.creation], row[data.crossstreets], row[data.entered_queue],
+                    row[data.db_id], row[data.jurisdiction], row[data.latitude], row[data.location],
+                    row[data.longitude], row[data.master_incident_id], row[data.premise],
+                    row[data.priority], row[data.sequencenumber], row[data.stacked],
+                    row[data.db_state], row[data.status], row[data.statusdatetime],
+                    row[data.type], row[data.type_description], row[data.zone]
+                ];
+
+                await pgPool.query(insertQuery, insertValues);
+            }
+        }
+
+        // Close connections to both MSSQL and PostgreSQL
+        await sql.close();
+        await pgPool.end();
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ message: 'Successfully processed data' }),
+        };
+
+    } catch (error) {
+        console.error('Error:', error);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ message: `Internal Server Error ***** The Data ${JSON.stringify(data)}` }),
+        };
     }
-}
-
-
-    // Close connections
-    await sql.close();
-    await pgPool.end();
-
-    return {
-        statusCode: 200,
-        body: JSON.stringify({ message: 'Successfully processed data' }),
-    };
-} catch (error) {
-    console.error('Error:', error);
-    return {
-        statusCode: 500,
-        body: JSON.stringify({ message: `Internal Server Error ***** The Data ${data}` }),
-    };
-}
 };
