@@ -5,25 +5,18 @@ dotenv.config();
 
 // AWS Lambda entry point
 module.exports.handler = async (event) => {
-    console.log('Received event:', JSON.stringify(event, null, 2));
-    // Extract data from the event object
-    let data;
+    console.log('Received event in second Lambda:', JSON.stringify(event, null, 2));
+
+  let data;
   try {
-    data = typeof event === 'string' ? JSON.parse(event) : event;  // Parse the incoming event payload
-  } catch (error) {
-    console.error('Error parsing event payload:', error);
-    return { statusCode: 400, body: 'Invalid event payload' };
-  }
+    data = typeof event === 'string' ? JSON.parse(event) : event;
 
-    console.log('Incoming Event parsed to data:', data);
+    // Log the full data object to ensure correctness
+    console.log('Full data object:', JSON.stringify(data, null, 2));
 
-    try {
-        // Setup dynamic PostgreSQL database location
-        const dbName = `client-${data.key}`;
-        const dbLoc = data.trans_db_loc;
-
-        console.log('DB Name:', dbName);
-
+    // Define PostgreSQL connection using environment variables
+    const dbName = `client-${data.key}`;
+    const dbLoc = data.trans_db_loc;
         // Configure MSSQL connection
         const mssqlConfig = {
             user: data.raw_user,
@@ -36,11 +29,13 @@ module.exports.handler = async (event) => {
         const pgsqlConfig = {
             user: process.env.DB_USER,
             host: dbLoc,
-            database: 'postgres',
-            password: "ZCK,tCI8lv4o", // Consider using environment variables for sensitive data
+            database: dbName,  // Dynamically use the client-specific database name
+            password: process.env.DB_PASSWORD,
             port: process.env.DB_PORT,
             max: 20,
-            ssl: true,  // Set to true to ensure encrypted connection
+            ssl: {
+                rejectUnauthorized: false, // Configure SSL settings
+            },
         };
 
         // Connect to MSSQL
