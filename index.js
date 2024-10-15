@@ -16,7 +16,7 @@ module.exports.handler = async (event) => {
 
     // Define PostgreSQL connection using environment variables
     const dbName = `client-${data.key}`;
-    const dbLoc = data.trans_db_loc;
+    console.log('loc is:', data.trans_db_loc);
         // Configure MSSQL connection
         const mssqlConfig = {
             user: data.raw_user,
@@ -27,11 +27,11 @@ module.exports.handler = async (event) => {
 
         // Configure PostgreSQL connection
         const pgsqlConfig = {
-            user: process.env.DB_USER,
-            host: dbLoc,
-            database: dbName,  // Dynamically use the client-specific database name
-            password: process.env.DB_PASSWORD,
-            port: process.env.DB_PORT,
+            user: "ensahost_client",
+            host: data.trans_db_loc,
+            database: 'postgres',  // Dynamically use the client-specific database name
+            password: "ZCK,tCI8lv4o",
+            port: 5432,
             max: 20,
             ssl: {
                 rejectUnauthorized: false, // Configure SSL settings
